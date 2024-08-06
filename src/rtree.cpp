@@ -3,7 +3,7 @@
 // Enable C++11 via this plugin to suppress 'long long' errors
 // [[Rcpp::plugins("cpp11")]]
 
-// Some of this code based on https://gallery.rcpp.org/articles/Rtree-examples/
+// Some of this code based on http://gallery.rcpp.org/articles/Rtree-examples/
 
 #include <vector>
 #include <Rcpp.h>
@@ -62,17 +62,36 @@ public:
     return indexes;
   }
 
-  // Get euclidean distances between point and points referenced by their indexes
+  // Constants
+  const double EARTH_RADIUS = 6371.0; // Earth radius in kilometers
+
+  // Get Haversine distances between point and points referenced by their indexes
   std::vector<double> get_distances(NumericVector point_vec, std::vector<int> indexes) {
-    point_t start = point_t(point_vec[0], point_vec[1]);
+    // Convert to radians
+    double lat1 = point_vec[1] * M_PI / 180.0; // Latitude
+    double lon1 = point_vec[0] * M_PI / 180.0; // Longitude
+
     std::vector<double> distances;
+
     for (unsigned int i = 0; i < indexes.size(); i++) {
-      point_t end = point_t(coords(indexes[i],0), coords(indexes[i],1));
-      double dist = bg::distance(start, end);
-      distances.push_back(dist);
+      // Convert to radians
+      double lat2 = coords(indexes[i],1) * M_PI / 180.0; // Latitude
+      double lon2 = coords(indexes[i],0) * M_PI / 180.0; // Longitude
+
+      // Haversine formula
+      double dlat = lat2 - lat1;
+      double dlon = lon2 - lon1;
+
+      double a = std::pow(sin(dlat / 2), 2) + cos(lat1) * cos(lat2) * std::pow(sin(dlon / 2), 2);
+      double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+      double distance = EARTH_RADIUS * c; // Distance in kilometers
+
+      distances.push_back(distance);
     }
-    return(distances);
+
+    return distances;
   }
+
 
   // Get indices of points within distance of point
   // Note: Returns R indices (starting at 1, not 0!)
@@ -90,7 +109,7 @@ public:
 
     // Filter candidates by the actual distance
     std::vector<double> inbox_distances = get_distances(point_vec, inbox_indexes);
-    for (unsigned int i=0; i<inbox_distances.size(); i++) {
+    for (unsigned int i = 0; i < inbox_distances.size(); i++) {
       if (inbox_distances[i] <= distance) {
         indist_indexes.push_back(inbox_indexes[i] + 1);
       }
