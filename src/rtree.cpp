@@ -102,8 +102,8 @@ public:
   }
 
   // Get indices of points within distance of point
-  // Note: Returns R indices (starting at 1, not 0!)
-  std::vector<int> within_distance(NumericVector point_vec, double distance, std::string distance_metric, double earth_radius) {
+// Note: Returns R indices (starting at 1, not 0!)
+std::vector<int> within_distance(NumericVector point_vec, double distance, std::string distance_metric, double earth_radius) {
     // Candidate points are within a square with side 2 * distance
     std::vector<int> indist_indexes;
     NumericVector box_vec = NumericVector::create(
@@ -131,11 +131,11 @@ public:
       }
     }
     return indist_indexes;
-  }
+}
 
-  // Multi point version of within_distance
-  // Note: Returns R indices (starting at 1, not 0!)
-  List within_distance_list(NumericMatrix point_mat, double distance, std::string distance_metric, double earth_radius) {
+// Multi point version of within_distance
+// Note: Returns R indices (starting at 1, not 0!)
+List within_distance_list(NumericMatrix point_mat, double distance, std::string distance_metric, double earth_radius) {
     List indist_indexes_ls(point_mat.nrow());
     for (int i = 0; i < point_mat.nrow(); i++) {
       NumericVector point_vec = point_mat(i, _);
@@ -143,7 +143,8 @@ public:
       indist_indexes_ls(i) = wrap(indist_indexes);
     }
     return indist_indexes_ls;
-  }
+}
+
 
   // Counting version of within_distance_list
   // For each point in point_mat, returns the number of points within distance.
@@ -193,7 +194,8 @@ private:
 RCPP_MODULE(rtreecpp) {
   class_<RTreeCpp>("RTreeCpp")
 
-  .constructor<NumericMatrix, double>() // Constructor now takes Earth radius
+  .constructor<NumericMatrix>()
+
   .method("intersects", &RTreeCpp::intersects)
   .method("within_distance", &RTreeCpp::within_distance)
   .method("within_distance_list", &RTreeCpp::within_distance_list)
@@ -201,3 +203,4 @@ RCPP_MODULE(rtreecpp) {
   .method("knn", &RTreeCpp::knn)
   .method("knn_list", &RTreeCpp::knn_list);
 }
+
