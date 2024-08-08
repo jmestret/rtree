@@ -41,6 +41,8 @@ RTree <- function(x) {
 #' @param rTree An \link{RTree} object.
 #' @param y A 2-column numeric matrix of point coordinates.
 #' @param distance A positive scalar.
+#' @param earth_radius The radius of the Earth (used for Haversine distance).
+#' @param distance_metric A string indicating the distance metric to use: "haversine" or "euclidean".
 #' @return A list with one entry per row of `y`.
 #' Each entry is a vector of row indices.
 #' @examples
@@ -54,16 +56,16 @@ RTree <- function(x) {
 #' B_rtree <- RTree(B)
 #'
 #' # Find points of B within 0.05 of each point in A
-#' nearby <- withinDistance(B_rtree, A, 0.05)
+#' nearby <- withinDistance(B_rtree, A, 0.05, 6371, "haversine")
 #'
 #' # Each element of nearby is a list of row indices in B
 #' print(nearby[[1]])
 #' @export
-withinDistance <- function(rTree, y, distance) {
+withinDistance <- function(rTree, y, distance, earth_radius, distance_metric) {
   UseMethod("withinDistance", rTree)
 }
 
-withinDistance.RTree <- function(rTree, y, distance) {
+withinDistance.RTree <- function(rTree, y, distance, earth_radius, distance_metric) {
 
   if (!inherits(rTree, "RTree")) {
     stop('rTree must be of class RTree.')
@@ -71,7 +73,7 @@ withinDistance.RTree <- function(rTree, y, distance) {
   if (!is.numeric(y)) {
     stop('y must be numeric.')
   }
-  if (length(dim(y)) != 2 | dim(y)[2] != 2) {
+  if (length(dim(y)) != 2 || dim(y)[2] != 2) {
     stop('y must be a 2-column matrix.')
   }
   if (!is.numeric(distance)) {
@@ -83,12 +85,20 @@ withinDistance.RTree <- function(rTree, y, distance) {
   if (distance <= 0) {
     stop('distance must be positive.')
   }
+  if (!is.numeric(earth_radius)) {
+    stop('earth_radius must be numeric.')
+  }
+  if (length(earth_radius) != 1) {
+    stop('earth_radius must be a scalar.')
+  }
+  if (!is.character(distance_metric) || !(distance_metric %in% c("haversine", "euclidean"))) {
+    stop('distance_metric must be either "haversine" or "euclidean".')
+  }
 
-  index.ls <- rTree$rTreeCpp$within_distance_list(y, distance)
+  index.ls <- rTree$rTreeCpp$within_distance_list(y, distance, distance_metric, earth_radius)
 
   return(index.ls)
 }
-
 
 #' Count Points Within Distance
 #'
@@ -99,6 +109,8 @@ withinDistance.RTree <- function(rTree, y, distance) {
 #' @param rTree An \link{RTree} object.
 #' @param y A 2-column numeric matrix of point coordinates.
 #' @param distance A positive scalar.
+#' @param earth_radius The radius of the Earth (used for Haversine distance).
+#' @param distance_metric A string indicating the distance metric to use: "haversine" or "euclidean".
 #' @return An integer vector of with one entry for each row of `y`.
 #' @examples
 #' # For two sets of points, A and B, count points in B within
@@ -111,16 +123,16 @@ withinDistance.RTree <- function(rTree, y, distance) {
 #' B_rtree <- RTree(B)
 #'
 #' # Find points of B within 0.05 of each point in A
-#' counts <- countWithinDistance(B_rtree, A, 0.05)
+#' counts <- countWithinDistance(B_rtree, A, 0.05, 6371, "haversine")
 #'
 #' # Each element of counts is a count of points in B
 #' print(counts[[1]])
 #' @export
-countWithinDistance <- function(rTree, y, distance) {
+countWithinDistance <- function(rTree, y, distance, earth_radius, distance_metric) {
   UseMethod("countWithinDistance", rTree)
 }
 
-countWithinDistance.RTree <- function(rTree, y, distance) {
+countWithinDistance.RTree <- function(rTree, y, distance, earth_radius, distance_metric) {
 
   if (!inherits(rTree, "RTree")) {
     stop('rTree must be of class RTree.')
@@ -128,20 +140,29 @@ countWithinDistance.RTree <- function(rTree, y, distance) {
   if (!is.numeric(y)) {
     stop('y must be numeric.')
   }
-  if (length(dim(y)) != 2 | dim(y)[2] != 2) {
+  if (length(dim(y)) != 2 || dim(y)[2] != 2) {
     stop('y must be a 2-column matrix.')
   }
   if (!is.numeric(distance)) {
-    stop('distance must be numeric.')
+    stop('distance must be numeric.');
   }
   if (length(distance) != 1) {
-    stop('distance must be a scalar.')
+    stop('distance must be a scalar.');
   }
   if (distance <= 0) {
-    stop('distance must be positive.')
+    stop('distance must be positive.');
+  }
+  if (!is.numeric(earth_radius)) {
+    stop('earth_radius must be numeric.');
+  }
+  if (length(earth_radius) != 1) {
+    stop('earth_radius must be a scalar.');
+  }
+  if (!is.character(distance_metric) || !(distance_metric %in% c("haversine", "euclidean"))) {
+    stop('distance_metric must be either "haversine" or "euclidean".');
   }
 
-  index.ls <- rTree$rTreeCpp$count_within_distance_list(y, distance)
+  index.ls <- rTree$rTreeCpp$count_within_distance_list(y, distance, distance_metric, earth_radius)
 
   return(index.ls)
 }
